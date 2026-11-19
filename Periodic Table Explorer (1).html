@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Periodic Table Explorer</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;background:#050814;color:#e8eefc;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+body{min-height:100vh;background:radial-gradient(1100px 600px at 15% -10%,#12306077,transparent),radial-gradient(900px 600px at 100% 10%,#3b1d6e66,transparent),#050814}
+.app{max-width:1400px;margin:auto;padding:16px}
+h1{margin:0;font-size:clamp(22px,4vw,34px);letter-spacing:.5px;background:linear-gradient(90deg,#5ef2ff,#6a8bff,#b57bff,#3ddc84);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{opacity:.6;font-size:13px;margin-top:2px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.pill{padding:7px 12px;border-radius:999px;background:#ffffff0d;border:1px solid #5ef2ff44;font-size:13px;color:#8ff3ff;box-shadow:0 0 14px #5ef2ff22}
+.sw{position:relative;flex:1 1 220px;max-width:360px}
+input{width:100%;padding:10px 14px;border-radius:12px;border:1px solid #6a8bff55;background:#0c1330cc;color:#fff;font-size:15px;outline:none;transition:.2s}
+input:focus{border-color:#5ef2ff;box-shadow:0 0 0 3px #5ef2ff22,0 0 18px #5ef2ff33}
+.drop{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;border-radius:12px;background:#0b1230f2;border:1px solid #6a8bff55;backdrop-filter:blur(12px);overflow:hidden;box-shadow:0 12px 30px #000a}
+.drop button{display:flex;gap:10px;align-items:center;width:100%;padding:9px 12px;background:none;border:0;color:#fff;font-size:14px;text-align:left;cursor:pointer}
+.drop button:hover{background:#5ef2ff1c}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
+.btn{padding:10px 14px;border-radius:12px;border:1px solid #6a8bff66;background:linear-gradient(135deg,#1b2b66,#2a1b5c);color:#fff;cursor:pointer;font-size:14px;transition:.2s}
+.btn:hover{border-color:#5ef2ff;box-shadow:0 0 16px #5ef2ff55;transform:translateY(-1px)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{--c:#fff;display:flex;gap:7px;align-items:center;padding:6px 11px;border-radius:999px;border:1px solid #ffffff22;background:#ffffff08;color:#dfe7ff;font-size:12.5px;cursor:pointer;transition:.2s}
+.chip:hover{border-color:var(--c);box-shadow:0 0 12px color-mix(in srgb,var(--c) 60%,transparent)}
+.chip.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,transparent)}
+.hint{font-size:12px;opacity:.5;margin:0 0 6px}
+.scroll{overflow:auto;padding:8px 2px 16px;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+.grid{--tw:54px;display:grid;grid-template-columns:repeat(18,minmax(0,1fr));grid-template-rows:repeat(7,auto) calc(var(--tw)*.25) repeat(2,auto);gap:clamp(1px,calc(var(--tw)*.07),4px);width:100%}
+.tile{--c:#fff;position:relative;aspect-ratio:1/1.08;border:1px solid color-mix(in srgb,var(--c) 60%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 32%,#0a1024),color-mix(in srgb,var(--c) 9%,#070b1a));border-radius:clamp(3px,calc(var(--tw)*.13),7px);color:#fff;cursor:pointer;padding:calc(var(--tw)*.06);display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:transform .2s,box-shadow .2s,opacity .35s,filter .35s;animation:pop .5s both;font-family:inherit}
+.tile:hover,.tile:focus-visible{transform:translateY(-3px) scale(1.14);z-index:5;outline:0;box-shadow:0 0 0 1px var(--c),0 0 20px var(--c),0 10px 24px #000a}
+.tile .n{align-self:flex-start;font-size:max(6px,calc(var(--tw)*.2));opacity:.8;line-height:1}
+.tile .s{font-size:min(20px,max(8px,calc(var(--tw)*.42)));font-weight:700;line-height:1;text-shadow:0 0 10px var(--c)}
+.tile .nm{font-size:min(9px,max(6px,calc(var(--tw)*.15)));max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .m{font-size:min(9px,max(6px,calc(var(--tw)*.15)));opacity:.65}
+.dim{opacity:.13;filter:saturate(.2)}
+.ph{--c:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(5px,calc(var(--tw)*.2),10px);border-radius:5px;border:1px dashed color-mix(in srgb,var(--c) 70%,transparent);color:var(--c);opacity:.8}
+@keyframes pop{from{opacity:0;transform:scale(.6)}}
+.ov{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(3,6,16,.74);backdrop-filter:blur(8px)}
+.panel{--c:#4da3ff;position:relative;width:min(1040px,100%);max-height:100%;overflow:auto;border-radius:20px;border:1px solid color-mix(in srgb,var(--c) 55%,#ffffff22);background:linear-gradient(145deg,#101a3ae6,#0a0f24eb);backdrop-filter:blur(20px);box-shadow:0 0 70px color-mix(in srgb,var(--c) 35%,transparent),inset 0 1px 0 #ffffff18}
+.ptop{display:flex;gap:8px;justify-content:flex-end;padding:14px 16px 0}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff0d;color:#fff;font-size:17px;cursor:pointer;transition:.2s}
+.ib:hover{border-color:var(--c);box-shadow:0 0 14px var(--c)}
+.pbody{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 22px 22px}
+@media(max-width:760px){.pbody{grid-template-columns:1fr;padding:12px 14px 18px}}
+.stage{position:relative;aspect-ratio:1;border-radius:16px;background:radial-gradient(circle,color-mix(in srgb,var(--c) 24%,#0a1230),#04070f 75%);border:1px solid #ffffff14;overflow:hidden;animation:mat .7s both}
+.stage svg{width:100%;height:100%;display:block}
+.scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#5ef2ff,transparent);box-shadow:0 0 14px #5ef2ff;animation:scan 1.1s ease-out both}
+@keyframes scan{from{top:0;opacity:1}to{top:100%;opacity:0}}
+@keyframes mat{from{opacity:0;transform:scale(.8);filter:blur(8px)}}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}}
+.info{animation:fade .5s both}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.big{font-size:clamp(48px,9vw,72px);font-weight:800;line-height:1;color:var(--c);text-shadow:0 0 24px var(--c)}
+.title{font-size:24px;font-weight:700}
+.tag{display:inline-block;margin-top:4px;padding:3px 10px;border-radius:999px;font-size:12px;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid var(--c)}
+.cells{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cell{padding:8px 11px;border-radius:10px;background:#ffffff0a;border:1px solid #ffffff10}
+.cell.w{grid-column:1/-1}
+.cell small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.55;margin-bottom:2px}
+.cell b{font-weight:600;font-size:14.5px;word-break:break-word}
+.legend-note{font-size:12px;opacity:.45;margin-top:14px;text-align:center}
+.zrow{display:flex;align-items:center;gap:6px;margin:0 0 6px}.zrow .hint{margin:0 auto 0 0}.zb{width:30px;height:30px;font-size:15px}
+.grid[data-l="0"] .n,.grid[data-l="0"] .nm,.grid[data-l="0"] .m,.grid[data-l="1"] .nm,.grid[data-l="1"] .m{display:none}
+.grid[data-l="0"] .tile{justify-content:center;align-items:center}
+@media(max-width:600px){.app{padding:8px}.bar{gap:6px;margin:10px 0}.btn{padding:8px 10px;font-size:13px}.chip{padding:4px 8px;font-size:11px}.legend{gap:5px}.legend-note{font-size:10.5px}}
+@media(max-height:520px){.app{padding:6px 10px}.sub{display:none}h1{font-size:18px}.bar{margin:6px 0}.legend{margin-bottom:4px}.tile{aspect-ratio:1/.95}.pbody{grid-template-columns:minmax(0,.85fr) 1fr;gap:14px;padding:6px 14px 14px}.stage{max-height:calc(100vh - 80px);max-width:calc(100vh - 80px);margin:auto}.ptop{padding:8px 14px 0}.ib{width:32px;height:32px}.big{font-size:44px}}
+</style></head><body><div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script>
+const {useState,useRef,useEffect,useLayoutEffect,useMemo}=React,h=React.createElement;
+const CATS=[["alkali","Alkali metals","#ff5d73"],["alkaline","Alkaline earth metals","#ff9f43"],["transition","Transition metals","#4da3ff"],["post","Post-transition metals","#2ec4b6"],["metalloid","Metalloids","#a3c93a"],["nonmetal","Nonmetals","#3ddc84"],["halogen","Halogens","#f2d03b"],["noble","Noble gases","#b57bff"],["lanth","Lanthanides","#ff7ac6"],["actin","Actinides","#c8895a"]];
+const CC=Object.fromEntries(CATS.map(c=>[c[0],c]));
+const L={alkali:[3,11,19,37,55,87],alkaline:[4,12,20,38,56,88],halogen:[9,17,35,53,85,117],noble:[2,10,18,36,54,86,118],metalloid:[5,14,32,33,51,52],nonmetal:[1,6,7,8,15,16,34],post:[13,31,49,50,81,82,83,84,113,114,115,116]};
+function cat(z){if(z>=57&&z<=71)return"lanth";if(z>=89&&z<=103)return"actin";for(const k in L)if(L[k].includes(z))return k;return"transition"}
+function pos(z){if(z==1)return[1,1];if(z==2)return[1,18];if(z<=4)return[2,z-2];if(z<=10)return[2,z+8];if(z<=12)return[3,z-10];if(z<=18)return[3,z];if(z<=36)return[4,z-18];if(z<=54)return[5,z-36];if(z<=56)return[6,z-54];if(z<=71)return[9,z-54];if(z<=86)return[6,z-68];if(z<=88)return[7,z-86];if(z<=103)return[10,z-86];return[7,z-100]}
+// sym|name|mass|melt K|boil K|density (g/cm³, g/L for gases)|year (0 = ancient)|discoverer
+const RAW=`H|Hydrogen|1.008|13.99|20.27|0.0899|1766|Henry Cavendish
+He|Helium|4.0026|0.95|4.22|0.1785|1868|Janssen & Lockyer
+Li|Lithium|6.94|453.65|1603|0.534|1817|Johan August Arfwedson
+Be|Beryllium|9.0122|1560|2742|1.85|1798|Louis-Nicolas Vauquelin
+B|Boron|10.81|2349|4200|2.34|1808|Gay-Lussac & Thénard; Humphry Davy
+C|Carbon|12.011|3823|4098|2.267|0|Known since antiquity
+N|Nitrogen|14.007|63.15|77.36|1.2506|1772|Daniel Rutherford
+O|Oxygen|15.999|54.36|90.2|1.429|1774|Priestley & Scheele
+F|Fluorine|18.998|53.53|85.03|1.696|1886|Henri Moissan
+Ne|Neon|20.18|24.56|27.07|0.9002|1898|Ramsay & Travers
+Na|Sodium|22.99|370.87|1156|0.971|1807|Humphry Davy
+Mg|Magnesium|24.305|923|1363|1.738|1755|Joseph Black
+Al|Aluminium|26.982|933.47|2792|2.70|1825|Hans Christian Ørsted
+Si|Silicon|28.085|1687|3538|2.329|1824|Jöns Jacob Berzelius
+P|Phosphorus|30.974|317.3|553.7|1.823|1669|Hennig Brand
+S|Sulfur|32.06|388.36|717.8|2.07|0|Known since antiquity
+Cl|Chlorine|35.45|171.6|239.11|3.214|1774|Carl Wilhelm Scheele
+Ar|Argon|39.948|83.8|87.3|1.784|1894|Rayleigh & Ramsay
+K|Potassium|39.098|336.53|1032|0.862|1807|Humphry Davy
+Ca|Calcium|40.078|1115|1757|1.55|1808|Humphry Davy
+Sc|Scandium|44.956|1814|3109|2.985|1879|Lars Fredrik Nilson
+Ti|Titanium|47.867|1941|3560|4.506|1791|William Gregor
+V|Vanadium|50.942|2183|3680|6.0|1801|Andrés Manuel del Río
+Cr|Chromium|51.996|2180|2944|7.15|1797|Louis-Nicolas Vauquelin
+Mn|Manganese|54.938|1519|2334|7.21|1774|Johan Gottlieb Gahn
+Fe|Iron|55.845|1811|3134|7.874|0|Known since antiquity
+Co|Cobalt|58.933|1768|3200|8.9|1735|Georg Brandt
+Ni|Nickel|58.693|1728|3186|8.908|1751|Axel Fredrik Cronstedt
+Cu|Copper|63.546|1357.77|2835|8.96|0|Known since antiquity
+Zn|Zinc|65.38|692.68|1180|7.14|1746|Andreas Marggraf
+Ga|Gallium|69.723|302.91|2477|5.91|1875|Lecoq de Boisbaudran
+Ge|Germanium|72.63|1211.4|3093|5.323|1886|Clemens Winkler
+As|Arsenic|74.922|1090|887|5.727|1250|Albertus Magnus
+Se|Selenium|78.971|494|958|4.81|1817|Jöns Jacob Berzelius
+Br|Bromine|79.904|265.8|332|3.12|1826|Antoine Balard
+Kr|Krypton|83.798|115.79|119.93|3.749|1898|Ramsay & Travers
+Rb|Rubidium|85.468|312.46|961|1.532|1861|Bunsen & Kirchhoff
+Sr|Strontium|87.62|1050|1655|2.64|1790|Adair Crawford
+Y|Yttrium|88.906|1799|3609|4.472|1794|Johan Gadolin
+Zr|Zirconium|91.224|2128|4682|6.52|1789|Martin Heinrich Klaproth
+Nb|Niobium|92.906|2750|5017|8.57|1801|Charles Hatchett
+Mo|Molybdenum|95.95|2896|4912|10.22|1778|Carl Wilhelm Scheele
+Tc|Technetium|98|2430|4538|11.5|1937|Perrier & Segrè
+Ru|Ruthenium|101.07|2607|4423|12.37|1844|Karl Ernst Claus
+Rh|Rhodium|102.906|2237|3968|12.41|1803|William Hyde Wollaston
+Pd|Palladium|106.42|1828.05|3236|12.02|1803|William Hyde Wollaston
+Ag|Silver|107.868|1234.93|2435|10.49|0|Known since antiquity
+Cd|Cadmium|112.414|594.22|1040|8.65|1817|Friedrich Stromeyer
+In|Indium|114.818|429.75|2345|7.31|1863|Reich & Richter
+Sn|Tin|118.71|505.08|2875|7.287|0|Known since antiquity
+Sb|Antimony|121.76|903.78|1860|6.685|0|Known since antiquity
+Te|Tellurium|127.6|722.66|1261|6.24|1782|Franz-Joseph Müller von Reichenstein
+I|Iodine|126.904|386.85|457.4|4.93|1811|Bernard Courtois
+Xe|Xenon|131.293|161.4|165.05|5.894|1898|Ramsay & Travers
+Cs|Cesium|132.905|301.59|944|1.93|1860|Bunsen & Kirchhoff
+Ba|Barium|137.327|1000|2170|3.51|1808|Humphry Davy
+La|Lanthanum|138.905|1193|3737|6.145|1839|Carl Gustaf Mosander
+Ce|Cerium|140.116|1068|3716|6.77|1803|Berzelius, Hisinger & Klaproth
+Pr|Praseodymium|140.908|1208|3793|6.773|1885|Carl Auer von Welsbach
+Nd|Neodymium|144.242|1297|3347|7.007|1885|Carl Auer von Welsbach
+Pm|Promethium|145|1315|3273|7.26|1945|Marinsky, Glendenin & Coryell
+Sm|Samarium|150.36|1345|2067|7.52|1879|Lecoq de Boisbaudran
+Eu|Europium|151.964|1099|1802|5.243|1901|Eugène-Anatole Demarçay
+Gd|Gadolinium|157.25|1585|3546|7.895|1880|Jean Charles de Marignac
+Tb|Terbium|158.925|1629|3503|8.229|1843|Carl Gustaf Mosander
+Dy|Dysprosium|162.5|1680|2840|8.55|1886|Lecoq de Boisbaudran
+Ho|Holmium|164.93|1734|2993|8.795|1878|Per Teodor Cleve
+Er|Erbium|167.259|1802|3141|9.066|1843|Carl Gustaf Mosander
+Tm|Thulium|168.934|1818|2223|9.321|1879|Per Teodor Cleve
+Yb|Ytterbium|173.045|1097|1469|6.965|1878|Jean Charles de Marignac
+Lu|Lutetium|174.967|1925|3675|9.84|1907|Georges Urbain
+Hf|Hafnium|178.49|2506|4876|13.31|1923|Coster & von Hevesy
+Ta|Tantalum|180.948|3290|5731|16.654|1802|Anders Gustaf Ekeberg
+W|Tungsten|183.84|3695|5828|19.25|1783|Juan José & Fausto Elhuyar
+Re|Rhenium|186.207|3459|5869|21.02|1925|Noddack, Tacke & Berg
+Os|Osmium|190.23|3306|5285|22.59|1803|Smithson Tennant
+Ir|Iridium|192.217|2719|4701|22.56|1803|Smithson Tennant
+Pt|Platinum|195.084|2041.4|4098|21.45|1735|Antonio de Ulloa
+Au|Gold|196.967|1337.33|3129|19.3|0|Known since antiquity
+Hg|Mercury|200.592|234.32|629.88|13.534|0|Known since antiquity
+Tl|Thallium|204.38|577|1746|11.85|1861|William Crookes
+Pb|Lead|207.2|600.61|2022|11.34|0|Known since antiquity
+Bi|Bismuth|208.98|544.7|1837|9.78|1753|Claude François Geoffroy
+Po|Polonium|209|527|1235|9.196|1898|Pierre & Marie Curie
+At|Astatine|210|575|610||1940|Corson, MacKenzie & Segrè
+Rn|Radon|222|202|211.3|9.73|1900|Friedrich Ernst Dorn
+Fr|Francium|223|300|950||1939|Marguerite Perey
+Ra|Radium|226|973|2010|5.5|1898|Pierre & Marie Curie
+Ac|Actinium|227|1323|3471|10.07|1899|André-Louis Debierne
+Th|Thorium|232.038|2115|5061|11.72|1829|Jöns Jacob Berzelius
+Pa|Protactinium|231.036|1841|4300|15.37|1913|Fajans & Göhring
+U|Uranium|238.029|1405.3|4404|19.1|1789|Martin Heinrich Klaproth
+Np|Neptunium|237|917|4273|20.45|1940|McMillan & Abelson
+Pu|Plutonium|244|912.5|3501|19.816|1940|Glenn Seaborg et al.
+Am|Americium|243|1449|2880|12|1944|Glenn Seaborg et al.
+Cm|Curium|247|1613|3383|13.51|1944|Seaborg, James & Ghiorso
+Bk|Berkelium|247|1259|2900|14.78|1949|Thompson, Ghiorso & Seaborg
+Cf|Californium|251|1173|1743|15.1|1950|Thompson et al.
+Es|Einsteinium|252|1133||8.84|1952|Albert Ghiorso et al.
+Fm|Fermium|257|1800|||1952|Albert Ghiorso et al.
+Md|Mendelevium|258|1100|||1955|Albert Ghiorso et al.
+No|Nobelium|259|1100|||1958|Ghiorso et al. (Berkeley)
+Lr|Lawrencium|266|1900|||1961|Albert Ghiorso et al.
+Rf|Rutherfordium|267||||1964|JINR Dubna & Berkeley
+Db|Dubnium|268||||1968|JINR Dubna
+Sg|Seaborgium|269||||1974|Berkeley & Dubna
+Bh|Bohrium|270||||1981|GSI Darmstadt
+Hs|Hassium|277||||1984|GSI Darmstadt
+Mt|Meitnerium|278||||1982|GSI Darmstadt
+Ds|Darmstadtium|281||||1994|GSI Darmstadt
+Rg|Roentgenium|282||||1994|GSI Darmstadt
+Cn|Copernicium|285||||1996|GSI Darmstadt
+Nh|Nihonium|286||||2004|RIKEN
+Fl|Flerovium|289||||1998|JINR Dubna
+Mc|Moscovium|290||||2003|JINR & Livermore
+Lv|Livermorium|293||||2000|JINR & Livermore
+Ts|Tennessine|294||||2010|JINR, ORNL & Livermore
+Og|Oganesson|294||||2002|JINR & Livermore`;
+// most abundant isotope mass numbers where rounding the average mass would be wrong
+const MO={28:58,29:63,30:64,31:69,34:80,35:79,40:90,42:98,44:102,47:107,48:114,50:120,51:121,52:130,54:132,56:138,60:142,63:153,64:158,66:164,68:166,70:174,72:180,75:187,76:192,77:193,80:202,81:205,82:208};
+const ORDER="1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p 7s 5f 6d 7p".split(" "),CAP={s:2,p:6,d:10,f:14};
+const EX={24:"4s1 3d5",29:"4s1 3d10",41:"5s1 4d4",42:"5s1 4d5",44:"5s1 4d7",45:"5s1 4d8",46:"5s0 4d10",47:"5s1 4d10",57:"4f0 5d1",58:"4f1 5d1",64:"4f7 5d1",78:"6s1 5d9",79:"6s1 5d10",89:"5f0 6d1",90:"5f0 6d2",91:"5f2 6d1",92:"5f3 6d1",93:"5f4 6d1",96:"5f7 6d1",103:"6d0 7p1"};
+function build(z){const o={};let r=z;for(const k of ORDER){const c=Math.min(r,CAP[k[1]]);if(c>0)o[k]=c;r-=c;if(!r)break}
+ if(EX[z])EX[z].split(" ").forEach(t=>{const v=+t.slice(2);if(v)o[t.slice(0,2)]=v;else delete o[t.slice(0,2)]});
+ const cfg=Object.entries(o).sort((a,b)=>(+a[0][0]-+b[0][0])||("spdf".indexOf(a[0][1])-"spdf".indexOf(b[0][1])));
+ const shells=[];cfg.forEach(([k,v])=>{shells[+k[0]-1]=(shells[+k[0]-1]||0)+v});return{cfg,shells:shells.map(x=>x||0)}}
+const ELS=RAW.split("\n").map((ln,i)=>{const [sym,name,mass,melt,boil,dens,year,by]=ln.split("|"),z=i+1,n=v=>v===""?null:+v,b=build(z);
+ return{z,sym,name,mass:+mass,melt:n(melt),boil:n(boil),dens:n(dens),year:+year,by,cat:cat(z),pos:pos(z),cfg:b.cfg,shells:b.shells,n:(MO[z]||Math.round(+mass))-z}});
+const sup=s=>String(s).replace(/\d/g,d=>"⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+const isGas=e=>e.boil!=null&&e.boil<293;
+const state=e=>e.melt==null?"Unknown":isGas(e)?"Gas":e.melt<293?"Liquid":"Solid";
+const temp=t=>t==null?"Unknown":`${+t.toFixed(1)} K (${+(t-273.15).toFixed(1)} °C)`;
+const dens=e=>e.dens==null?"Unknown":`${e.dens} ${isGas(e)?"g/L":"g/cm³"}`;
+
+function Atom({el,col}){
+ const sh=el.shells,N=sh.length,tot=Math.min(el.z+el.n,40),pc=Math.max(1,Math.round(tot*el.z/(el.z+el.n)));
+ const rr=i=>N==1?80:46+94*i/(N-1);
+ const nuc=useMemo(()=>{const R=6.2*Math.cbrt(tot),a=[];for(let i=0;i<tot;i++){const y=tot==1?0:1-2*(i+.5)/tot,q=Math.sqrt(1-y*y),th=i*2.39996,f=tot==1?0:.55+.45*(((i*37)%10)/10);
+  a.push({x:Math.cos(th)*q*R*f,y:y*R*f,z:Math.sin(th)*q*R*f,p:Math.floor((i+1)*pc/tot)>Math.floor(i*pc/tot)})}return a},[el.z]);
+ const elec=useMemo(()=>{const a=[];sh.forEach((c,i)=>{for(let j=0;j<c;j++)a.push({i,j,c})});return a},[el.z]);
+ const rR=useRef([]),eR=useRef([]),nR=useRef([]);
+ useEffect(()=>{let raf;const t0=performance.now();
+  const tr=(x,y)=>[x,y,0];
+  const loop=now=>{const t=(now-t0)/1000,g=t*.25;
+   for(let i=0;i<N;i++){const r=rr(i),a=1+i*.42,b=i*1.1;let d="";
+    for(let k=0;k<=64;k++){const th=k/64*6.2832,p=tr(r*Math.cos(th),r*Math.sin(th),0,a,b,g),s=650/(650-p[2]);d+=(k?"L":"M")+(200+p[0]*s).toFixed(1)+" "+(200+p[1]*s).toFixed(1)}
+    rR.current[i]&&rR.current[i].setAttribute("d",d)}
+   for(let k=0;k<elec.length;k++){const e=elec[k],r=rr(e.i),th=e.j/e.c*6.2832+t*1.5/(1+e.i*.5)*(e.i%2?-1:1),p=tr(r*Math.cos(th),r*Math.sin(th),0,1+e.i*.42,e.i*1.1,g),s=650/(650-p[2]),n=eR.current[k];
+    if(n){n.setAttribute("cx",200+p[0]*s);n.setAttribute("cy",200+p[1]*s);n.setAttribute("r",4*s);n.setAttribute("opacity",.5+.5*(p[2]/r*.5+.5))}}
+   nuc.forEach((q,k)=>{const p=tr(q.x,q.y,q.z,0,0,g*2),s=650/(650-p[2]),n=nR.current[k];if(n){n.setAttribute("cx",200+p[0]*s);n.setAttribute("cy",200+p[1]*s);n.setAttribute("r",6.4*s);n.setAttribute("opacity",.7+.3*Math.min(1,Math.max(0,p[2]/20+.5)))}});
+   raf=requestAnimationFrame(loop)};
+  raf=requestAnimationFrame(loop);return()=>cancelAnimationFrame(raf)},[el.z]);
+ return h("svg",{viewBox:"0 0 400 400"},
+  h("defs",null,
+   h("filter",{id:"glow",x:"-20%",y:"-20%",width:"140%",height:"140%"},h("feGaussianBlur",{stdDeviation:2.4,result:"b"}),h("feMerge",null,h("feMergeNode",{in:"b"}),h("feMergeNode",{in:"SourceGraphic"}))),
+   h("radialGradient",{id:"halo"},h("stop",{offset:0,stopColor:col,stopOpacity:.6}),h("stop",{offset:1,stopColor:col,stopOpacity:0})),
+   h("radialGradient",{id:"gp",cx:".35",cy:".35"},h("stop",{offset:0,stopColor:"#ffd0d8"}),h("stop",{offset:1,stopColor:"#ff3d63"})),
+   h("radialGradient",{id:"gn",cx:".35",cy:".35"},h("stop",{offset:0,stopColor:"#d6e6ff"}),h("stop",{offset:1,stopColor:"#4a7dff"}))),
+  h("circle",{cx:200,cy:200,r:60,fill:"url(#halo)"}),
+  h("g",{filter:"url(#glow)"},sh.map((_,i)=>h("path",{key:i,ref:n=>rR.current[i]=n,fill:"none",stroke:col,strokeOpacity:.55,strokeWidth:1.3}))),
+  h("g",{filter:"url(#glow)"},elec.map((_,k)=>h("circle",{key:k,ref:n=>eR.current[k]=n,r:4,fill:"#9ff6ff"}))),
+  h("g",null,nuc.map((q,k)=>h("circle",{key:k,ref:n=>nR.current[k]=n,r:6,fill:q.p?"url(#gp)":"url(#gn)"}))))}
+
+function Panel({z,origin,onClose,onSel}){
+ const e=ELS[z-1],c=CC[e.cat],ref=useRef(),ov=useRef(),kf=useRef(),done=useRef(false);
+ useLayoutEffect(()=>{const p=ref.current,r=p.getBoundingClientRect();
+  kf.current=origin?[{transform:`translate(${origin.left+origin.width/2-r.left-r.width/2}px,${origin.top+origin.height/2-r.top-r.height/2}px) scale(${origin.width/r.width},${origin.height/r.height})`,opacity:.2,borderRadius:"7px"},{transform:"none",opacity:1,borderRadius:"20px"}]:[{transform:"scale(.85)",opacity:0},{transform:"none",opacity:1}];
+  p.animate(kf.current,{duration:600,easing:"cubic-bezier(.2,.8,.2,1)"});ov.current.animate([{opacity:0},{opacity:1}],{duration:400})},[]);
+ const close=()=>{if(done.current)return;done.current=true;const a=ref.current.animate(kf.current.slice().reverse(),{duration:380,easing:"ease-in",fill:"forwards"});ov.current.animate([{opacity:1},{opacity:0}],{duration:380,fill:"forwards"});a.onfinish=onClose};
+ useEffect(()=>{const k=ev=>{if(ev.key==="Escape")close();if(ev.key==="ArrowRight")onSel(z%118+1);if(ev.key==="ArrowLeft")onSel((z+116)%118+1)};addEventListener("keydown",k);return()=>removeEventListener("keydown",k)});
+ const C=(l,v,w)=>h("div",{className:"cell"+(w?" w":""),key:l},h("small",null,l),h("b",null,v));
+ return h("div",{className:"ov",ref:ov,onMouseDown:ev=>{if(ev.target===ov.current)close()}},
+  h("div",{className:"panel",ref:ref,style:{"--c":c[2]}},
+   h("div",{className:"ptop"},
+    h("button",{className:"ib",title:"Previous",onClick:()=>onSel((z+116)%118+1)},"‹"),
+    h("button",{className:"ib",title:"Next",onClick:()=>onSel(z%118+1)},"›"),
+    h("button",{className:"ib",title:"Random element",onClick:()=>onSel(1+Math.floor(Math.random()*118))},"⚄"),
+    h("button",{className:"ib",title:"Back to table",onClick:close},"✕")),
+   h("div",{className:"pbody"},
+    h("div",{className:"stage",key:"s"+z},h(Atom,{el:e,col:c[2]}),h("div",{className:"scan"})),
+    h("div",{className:"info",key:"i"+z},
+     h("div",{className:"head"},h("div",{className:"big"},e.sym),h("div",null,h("div",{className:"title"},e.name),h("span",{className:"tag"},c[1]))),
+     h("div",{className:"cells"},
+      C("Atomic number",e.z),C("Atomic mass",e.mass+" u"),C("Protons",e.z),C("Neutrons",e.n),C("Electrons",e.z),C("State at 20 °C",state(e)),
+      C("Melting point",temp(e.melt)),C("Boiling point",temp(e.boil)),C("Density",dens(e)),C("Discovered",e.year?e.year:"Ancient"),C("Discoverer",e.by,1),
+      C("Electron configuration",e.cfg.map(([k,v])=>k+sup(v)).join(" "),1),C("Electrons per shell",e.shells.join(" · "),1))))))}
+
+function App(){
+ const [sel,setSel]=useState(null),[origin,setOrigin]=useState(null),[flt,setFlt]=useState(null),[q,setQ]=useState(""),[foc,setFoc]=useState(false);
+ const sc=useRef(),gr=useRef(),zm=useRef(1);
+ const zoomTo=(nz,cx,cy)=>{const s=sc.current,g=gr.current;if(!s)return;nz=Math.min(4,Math.max(1,nz));const r=s.getBoundingClientRect();if(cx==null){cx=r.left+r.width/2;cy=r.top+Math.min(r.height,innerHeight)/3}
+  const b=g.getBoundingClientRect(),fx=(cx-b.left)/b.width,fy=(cy-b.top)/b.height;zm.current=nz;g.style.width=nz*100+"%";
+  const b2=g.getBoundingClientRect();s.scrollLeft+=b2.left+fx*b2.width-cx;scrollBy(0,b2.top+fy*b2.height-cy)};
+ useEffect(()=>{const g=gr.current,s=sc.current;const ro=new ResizeObserver(()=>{const w=g.offsetWidth/18;g.style.setProperty("--tw",w+"px");g.dataset.l=w<24?0:w<46?1:2});ro.observe(g);
+  let d0=0,z0=1;const P=t=>[(t[0].clientX+t[1].clientX)/2,(t[0].clientY+t[1].clientY)/2],D=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  const ts=e=>{if(e.touches.length==2){d0=D(e.touches);z0=zm.current}},tm=e=>{if(e.touches.length==2&&d0){e.preventDefault();const p=P(e.touches);zoomTo(z0*D(e.touches)/d0,p[0],p[1])}},te=e=>{if(e.touches.length<2)d0=0},wh=e=>{if(e.ctrlKey){e.preventDefault();zoomTo(zm.current*(1-e.deltaY*.01),e.clientX,e.clientY)}};
+  s.addEventListener("touchstart",ts,{passive:true});s.addEventListener("touchmove",tm,{passive:false});s.addEventListener("touchend",te);s.addEventListener("wheel",wh,{passive:false});
+  return()=>{ro.disconnect();s.removeEventListener("touchstart",ts);s.removeEventListener("touchmove",tm);s.removeEventListener("touchend",te);s.removeEventListener("wheel",wh)}},[]);
+ const open=z=>{const t=document.getElementById("t"+z);setOrigin(t?t.getBoundingClientRect():null);setSel(z);setQ("");setFoc(false)};
+ const res=useMemo(()=>{const s=q.trim().toLowerCase();if(!s)return[];return ELS.filter(e=>String(e.z)===s||e.sym.toLowerCase()===s||e.name.toLowerCase().startsWith(s)||(s.length>2&&e.name.toLowerCase().includes(s))).slice(0,6)},[q]);
+ const cnt=flt?ELS.filter(e=>e.cat===flt).length:118;
+ return h("div",{className:"app"},
+  h("h1",null,"Periodic Table Explorer"),h("div",{className:"sub"},"Tap any element to see its live atomic model"),
+  h("div",{className:"bar"},
+   h("span",{className:"pill"},flt?`${cnt} of 118 elements`:"118 elements"),
+   h("div",{className:"sw"},h("input",{value:q,placeholder:"Search name, symbol or number…",onChange:e=>setQ(e.target.value),onFocus:()=>setFoc(true),onBlur:()=>setTimeout(()=>setFoc(false),150),onKeyDown:e=>{if(e.key==="Enter"&&res[0])open(res[0].z)}}),
+    foc&&res.length>0&&h("div",{className:"drop"},res.map(e=>h("button",{key:e.z,onMouseDown:ev=>{ev.preventDefault();open(e.z)}},h("span",{className:"dot",style:{"--c":CC[e.cat][2]}}),h("b",null,e.sym),e.name,h("span",{style:{marginLeft:"auto",opacity:.5}},e.z))))),
+   h("button",{className:"btn",onClick:()=>open(1+Math.floor(Math.random()*118))},"⚄ Random element"),
+   h("button",{className:"btn",onClick:()=>{setFlt(null);setQ("");setSel(null)}},"Full table")),
+  h("div",{className:"legend"},CATS.map(c=>h("button",{key:c[0],className:"chip"+(flt===c[0]?" on":""),style:{"--c":c[2]},onClick:()=>setFlt(flt===c[0]?null:c[0])},h("span",{className:"dot"}),c[1]))),
+  h("div",{className:"zrow"},h("span",{className:"hint"},"Pinch to zoom · tap a chip to filter"),h("button",{className:"ib zb",title:"Zoom out",onClick:()=>zoomTo(zm.current/1.4)},"−"),h("button",{className:"ib zb",title:"Zoom in",onClick:()=>zoomTo(zm.current*1.4)},"+"),h("button",{className:"ib zb",title:"Reset zoom",onClick:()=>zoomTo(1)},"⟲")),
+  h("div",{className:"scroll",ref:sc},h("div",{className:"grid",ref:gr},
+   ELS.map(e=>h("button",{key:e.z,id:"t"+e.z,"aria-label":e.name,className:"tile"+(flt&&flt!==e.cat?" dim":""),style:{gridRow:e.pos[0],gridColumn:e.pos[1],"--c":CC[e.cat][2],animationDelay:e.z*7+"ms"},onClick:()=>open(e.z)},
+    h("span",{className:"n"},e.z),h("span",{className:"s"},e.sym),h("span",{className:"nm"},e.name),h("span",{className:"m"},e.mass.toFixed(e.mass>=100?1:2)))),
+   h("div",{className:"ph",style:{gridRow:6,gridColumn:3,"--c":CC.lanth[2]}},"57–71"),
+   h("div",{className:"ph",style:{gridRow:7,gridColumn:3,"--c":CC.actin[2]}},"89–103"))),
+  h("div",{className:"legend-note"},"Neutron counts use the most abundant isotope (longest-lived for radioactive elements). Superheavy element properties are largely unmeasured."),
+  sel&&h(Panel,{z:sel,origin,onSel:setSel,onClose:()=>setSel(null)}))}
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+</script></body></html>
